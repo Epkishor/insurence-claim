@@ -1,8 +1,13 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { logoutUser } from "../api/authApi";
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  if (location.pathname === "/" || location.pathname === "/register") {
+    return null;
+  }
 
   const handleLogout = () => {
     logoutUser();
