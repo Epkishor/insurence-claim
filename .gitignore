@@ -8,3 +8,27 @@ wheels/
 
 # Virtual environments
 .venv
+
+# AI data and generated files
+ai_data/raw_documents/
+ai_data/processed_documents/
+ai_data/vector_db/
+ai_data/models/
+
+# Model files
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+*.onnx
+
+# Vector database files
+*.faiss
+*.index
+*.sqlite3
+chroma.sqlite3
+
+# OCR / temporary extracted files
+*.tmp
+*.cache
