@@ -11,7 +11,7 @@ class PatientViewSet(viewsets.ModelViewSet):
 
 
 class ClaimViewSet(viewsets.ModelViewSet):
-    queryset = Claim.objects.all().order_by('-created_at')
+    queryset = Claim.objects.all()
     serializer_class = ClaimSerializer
 
     @action(detail=True, methods=['post'])
@@ -21,13 +21,13 @@ class ClaimViewSet(viewsets.ModelViewSet):
         approved_amount = claim.calculate_approved_amount()
 
         if approved_amount == 0:
-            claim.status = 'REJECTED'
+            claim.status = Claim.Status.REJECTED
             claim.decision_reason = 'Claim amount is not payable based on policy limit and deductible.'
         elif approved_amount < claim.claimed_amount:
-            claim.status = 'PARTIALLY_APPROVED'
+            claim.status = Claim.Status.PARTIALLY_APPROVED
             claim.decision_reason = 'Claim partially approved due to policy limit or deductible.'
         else:
-            claim.status = 'APPROVED'
+            claim.status = Claim.Status.APPROVED
             claim.decision_reason = 'Claim approved successfully.'
 
         claim.save()
