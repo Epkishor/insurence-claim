@@ -67,11 +67,7 @@ export default function Login() {
             verify, review, and approve claims with intelligent automation.
           </p>
 
-          <div className="auth-stats">
-            <Stat value="12K+" label="Claims Processed" />
-            <Stat value="85+" label="Hospitals Connected" />
-            <Stat value="4.8 hrs" label="Avg. Processing Time" />
-          </div>
+      
 
           <div className="auth-illustration-card">
             <div className="auth-illustration-icon">

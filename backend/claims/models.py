@@ -16,16 +16,15 @@ class Patient(models.Model):
 
 
 class Claim(models.Model):
-    STATUS_CHOICES = [
-        ('PENDING_DOCUMENTS', 'Pending Documents'),
-        ('DOCUMENTS_UPLOADED', 'Documents Uploaded'),
-        ('PROCESSING', 'Processing'),
-        ('UNDER_REVIEW', 'Under Review'),
-        ('APPROVED', 'Approved'),
-        ('PARTIALLY_APPROVED', 'Partially Approved'),
-        ('REJECTED', 'Rejected'),
-        ('MORE_DOCUMENTS_REQUIRED', 'More Documents Required'),
-    ]
+    class Status(models.TextChoices):
+        PENDING_DOCUMENTS = 'PENDING_DOCUMENTS', 'Pending Documents'
+        DOCUMENTS_UPLOADED = 'DOCUMENTS_UPLOADED', 'Documents Uploaded'
+        PROCESSING = 'PROCESSING', 'Processing'
+        UNDER_REVIEW = 'UNDER_REVIEW', 'Under Review'
+        APPROVED = 'APPROVED', 'Approved'
+        PARTIALLY_APPROVED = 'PARTIALLY_APPROVED', 'Partially Approved'
+        REJECTED = 'REJECTED', 'Rejected'
+        MORE_DOCUMENTS_REQUIRED = 'MORE_DOCUMENTS_REQUIRED', 'More Documents Required'
 
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
@@ -46,8 +45,8 @@ class Claim(models.Model):
 
     status = models.CharField(
         max_length=40,
-        choices=STATUS_CHOICES,
-        default='PENDING_DOCUMENTS'
+        choices=Status.choices,
+        default=Status.PENDING_DOCUMENTS
     )
 
     fraud_score = models.FloatField(null=True, blank=True)
@@ -55,6 +54,9 @@ class Claim(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def calculate_approved_amount(self):
         policy_limit = self.policy.coverage_amount

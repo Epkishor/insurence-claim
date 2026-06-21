@@ -9,6 +9,18 @@ wheels/
 # Virtual environments
 .venv
 
+# Local environment and runtime files
+.env
+backend/.env
+frontend/.env
+db.sqlite3
+backend/db.sqlite3
+backend/media/
+
+# Frontend dependencies and builds
+frontend/node_modules/
+frontend/dist/
+
 # AI data and generated files
 ai_data/raw_documents/
 ai_data/processed_documents/

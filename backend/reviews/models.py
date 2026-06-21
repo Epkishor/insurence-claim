@@ -4,12 +4,11 @@ from claims.models import Claim
 
 
 class HumanReview(models.Model):
-    DECISION_CHOICES = [
-        ('APPROVE', 'Approve'),
-        ('REJECT', 'Reject'),
-        ('REQUEST_MORE_DOCUMENTS', 'Request More Documents'),
-        ('PARTIALLY_APPROVE', 'Partially Approve'),
-    ]
+    class Decision(models.TextChoices):
+        APPROVE = 'APPROVE', 'Approve'
+        REJECT = 'REJECT', 'Reject'
+        REQUEST_MORE_DOCUMENTS = 'REQUEST_MORE_DOCUMENTS', 'Request More Documents'
+        PARTIALLY_APPROVE = 'PARTIALLY_APPROVE', 'Partially Approve'
 
     claim = models.ForeignKey(
         Claim,
@@ -17,7 +16,7 @@ class HumanReview(models.Model):
         related_name='human_reviews'
     )
     reviewer = models.ForeignKey(User, on_delete=models.CASCADE)
-    decision = models.CharField(max_length=40, choices=DECISION_CHOICES)
+    decision = models.CharField(max_length=40, choices=Decision.choices)
     approved_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -27,22 +26,24 @@ class HumanReview(models.Model):
     comment = models.TextField()
     reviewed_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-reviewed_at']
+
+    # Maps a reviewer decision to the resulting claim status. Keeping this as
+    # data (instead of an if/elif chain duplicating Claim.Status) means the
+    # mapping is defined once, in one place, and is trivial to extend.
+    DECISION_TO_CLAIM_STATUS = {
+        Decision.APPROVE: Claim.Status.APPROVED,
+        Decision.PARTIALLY_APPROVE: Claim.Status.PARTIALLY_APPROVED,
+        Decision.REJECT: Claim.Status.REJECTED,
+        Decision.REQUEST_MORE_DOCUMENTS: Claim.Status.MORE_DOCUMENTS_REQUIRED,
+    }
+
     def save(self, *args, **kwargs):
-        if self.decision == 'APPROVE':
-            self.claim.status = 'APPROVED'
-            if self.approved_amount:
-                self.claim.approved_amount = self.approved_amount
+        self.claim.status = self.DECISION_TO_CLAIM_STATUS[self.decision]
 
-        elif self.decision == 'PARTIALLY_APPROVE':
-            self.claim.status = 'PARTIALLY_APPROVED'
-            if self.approved_amount:
-                self.claim.approved_amount = self.approved_amount
-
-        elif self.decision == 'REJECT':
-            self.claim.status = 'REJECTED'
-
-        elif self.decision == 'REQUEST_MORE_DOCUMENTS':
-            self.claim.status = 'MORE_DOCUMENTS_REQUIRED'
+        if self.decision in (self.Decision.APPROVE, self.Decision.PARTIALLY_APPROVE) and self.approved_amount:
+            self.claim.approved_amount = self.approved_amount
 
         self.claim.decision_reason = self.comment
         self.claim.save()
