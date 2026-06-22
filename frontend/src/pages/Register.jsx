@@ -1,15 +1,18 @@
-﻿import { useState } from "react";
+﻿import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../api";
+import Turnstile from "../components/Turnstile";
 
 export default function Register() {
   const navigate = useNavigate();
+  const turnstileRef = useRef(null);
   const [form, setForm] = useState({
     username: "",
     email: "",
     password: "",
     role: "HOSPITAL_STAFF",
   });
+  const [turnstileToken, setTurnstileToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -26,13 +29,16 @@ export default function Register() {
     if (!form.email.trim()) return setError("Email is required.");
     if (!form.password.trim()) return setError("Password is required.");
     if (form.password.length < 6) return setError("Password must be at least 6 characters.");
+    if (!turnstileToken) return setError("Please complete the verification check.");
 
     try {
       setLoading(true);
-      await API.post("/users/register/", form);
-      navigate("/");
+      await API.post("/users/register/", { ...form, turnstile_token: turnstileToken });
+      navigate("/verify-email", { state: { email: form.email } });
     } catch (err) {
       setError("Could not create account. Please check your details and try again.");
+      turnstileRef.current?.reset();
+      setTurnstileToken("");
     } finally {
       setLoading(false);
     }
@@ -123,7 +129,11 @@ export default function Register() {
               </div>
             </div>
 
-            <button className="auth-submit" disabled={loading}>
+            <div className="auth-field">
+              <Turnstile ref={turnstileRef} onVerify={setTurnstileToken} action="register" />
+            </div>
+
+            <button className="auth-submit" disabled={loading || !turnstileToken}>
               {loading ? "Creating account..." : "Create Account"}
             </button>
 
