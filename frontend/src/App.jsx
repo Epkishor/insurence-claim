@@ -12,6 +12,7 @@ import UploadDocuments from "./pages/UploadDocuments";
 import ClaimList from "./pages/ClaimList";
 import ClaimDetails from "./pages/ClaimDetails";
 import ReviewClaim from "./pages/ReviewClaim";
+import VerifyEmail from "./pages/VerifyEmail";
 import Profile from "./pages/Profile";
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
 
           <Route
             path="/dashboard"
