@@ -1,0 +1,33 @@
+name: Insurance Project CI/CD
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: actions/setup-buildx-action@v3
+
+      - name: Build Backend Container
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Frontend Container
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
