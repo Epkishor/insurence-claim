@@ -1,213 +1,104 @@
-"""
+﻿"""
 Supervisor Agent for Insurance Claim AI Processing.
 
-This agent controls the AI workflow. For now, it uses simple internal
-rule-based placeholder methods. Later, you can connect it with separate agents:
-Document & Medical Analysis Agent, Policy & Eligibility Agent,
-Risk & Fraud Detection Agent, and Claim Decision & Explanation Agent.
+This agent orchestrates the complete rule-based AI workflow:
+1. Document & Medical Analysis Agent
+2. Policy & Eligibility Agent
+3. Risk & Fraud Detection Agent
+4. Claim Decision & Explanation Agent
 """
+
+import sys
+from pathlib import Path
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+from ai_engine.agents.document_medical_agent import DocumentMedicalAgent
+from ai_engine.agents.policy_eligibility_agent import PolicyEligibilityAgent
+from ai_engine.agents.risk_fraud_agent import RiskFraudAgent
+from ai_engine.agents.claim_decision_explanation_agent import ClaimDecisionExplanationAgent
 
 
 class SupervisorAgent:
     def __init__(self):
-        self.required_documents = {
-            "Insurance Card",
-            "Citizenship / ID",
-            "Medical Report",
-            "Prescription",
-            "Hospital Bill",
-            "Discharge Summary",
-            "Lab Report",
-        }
+        self.document_medical_agent = DocumentMedicalAgent()
+        self.policy_eligibility_agent = PolicyEligibilityAgent()
+        self.risk_fraud_agent = RiskFraudAgent()
+        self.claim_decision_explanation_agent = ClaimDecisionExplanationAgent()
 
     def process_claim(self, claim_data):
         """
-        Main method to process one insurance claim.
+        Process one insurance claim through all AI agents.
 
         Expected claim_data example:
         {
             "patient_name": "Ram Sharma",
+            "hospital_name": "City Hospital",
             "diagnosis": "Appendicitis",
-            "treatment": "Surgery",
+            "treatment": "Appendix Surgery",
+            "prescription": "Antibiotics and pain medicine",
+            "lab_test": "Blood test and ultrasound",
             "bill_amount": 80000,
             "policy_limit": 100000,
+            "deductible": 5000,
+            "copayment_percent": 10,
             "policy_active": True,
             "waiting_period_completed": True,
             "hospital_in_network": True,
-            "documents": [
-                "Insurance Card",
-                "Citizenship / ID",
-                "Medical Report",
-                "Prescription",
-                "Hospital Bill",
-                "Discharge Summary",
-                "Lab Report"
-            ]
+            "duplicate_claim": False,
+            "diagnosis_treatment_mismatch": False,
+            "documents": [...]
         }
         """
 
-        document_result = self._check_documents(claim_data)
-        policy_result = self._check_policy_eligibility(claim_data)
-        fraud_result = self._check_fraud_risk(claim_data, document_result, policy_result)
-        decision_result = self._make_decision(claim_data, document_result, policy_result, fraud_result)
+        document_result = self.document_medical_agent.analyze(claim_data)
+        policy_result = self.policy_eligibility_agent.analyze(claim_data)
+        fraud_result = self.risk_fraud_agent.analyze(
+            claim_data=claim_data,
+            document_result=document_result,
+            policy_result=policy_result,
+        )
+        final_decision = self.claim_decision_explanation_agent.analyze(
+            claim_data=claim_data,
+            document_result=document_result,
+            policy_result=policy_result,
+            fraud_result=fraud_result,
+        )
 
         return {
+            "agent_name": "Supervisor Agent",
             "patient_name": claim_data.get("patient_name"),
+            "hospital_name": claim_data.get("hospital_name"),
             "diagnosis": claim_data.get("diagnosis"),
-            "document_analysis": document_result,
-            "policy_eligibility": policy_result,
-            "fraud_analysis": fraud_result,
-            "final_decision": decision_result,
-        }
-
-    def _check_documents(self, claim_data):
-        documents = set(claim_data.get("documents", []))
-        missing_documents = sorted(self.required_documents - documents)
-
-        if missing_documents:
-            status = "incomplete"
-            message = "Some required documents are missing."
-        else:
-            status = "complete"
-            message = "All required documents are submitted."
-
-        return {
-            "status": status,
-            "submitted_documents": sorted(documents),
-            "missing_documents": missing_documents,
-            "message": message,
-        }
-
-    def _check_policy_eligibility(self, claim_data):
-        policy_active = bool(claim_data.get("policy_active", False))
-        waiting_period_completed = bool(claim_data.get("waiting_period_completed", False))
-        hospital_in_network = bool(claim_data.get("hospital_in_network", False))
-
-        bill_amount = float(claim_data.get("bill_amount", 0))
-        policy_limit = float(claim_data.get("policy_limit", 0))
-
-        reasons = []
-
-        if not policy_active:
-            reasons.append("Policy is not active.")
-
-        if not waiting_period_completed:
-            reasons.append("Waiting period is not completed.")
-
-        if not hospital_in_network:
-            reasons.append("Hospital is not in approved network.")
-
-        if bill_amount > policy_limit:
-            reasons.append("Bill amount is higher than policy coverage limit.")
-
-        eligible = len(reasons) == 0
-
-        return {
-            "eligible": eligible,
-            "policy_active": policy_active,
-            "waiting_period_completed": waiting_period_completed,
-            "hospital_in_network": hospital_in_network,
-            "bill_amount": bill_amount,
-            "policy_limit": policy_limit,
-            "reasons": reasons,
-        }
-
-    def _check_fraud_risk(self, claim_data, document_result, policy_result):
-        risk_score = 0
-        risk_factors = []
-
-        bill_amount = float(claim_data.get("bill_amount", 0))
-        policy_limit = float(claim_data.get("policy_limit", 0))
-
-        if document_result["status"] == "incomplete":
-            risk_score += 25
-            risk_factors.append("Missing required documents.")
-
-        if bill_amount > policy_limit:
-            risk_score += 20
-            risk_factors.append("Claim amount exceeds policy limit.")
-
-        if claim_data.get("duplicate_claim", False):
-            risk_score += 35
-            risk_factors.append("Possible duplicate claim detected.")
-
-        if claim_data.get("diagnosis_treatment_mismatch", False):
-            risk_score += 30
-            risk_factors.append("Diagnosis and treatment information may not match.")
-
-        if not policy_result["hospital_in_network"]:
-            risk_score += 10
-            risk_factors.append("Hospital is outside approved network.")
-
-        risk_score = min(risk_score, 100)
-
-        if risk_score >= 70:
-            risk_level = "high"
-        elif risk_score >= 35:
-            risk_level = "medium"
-        else:
-            risk_level = "low"
-
-        return {
-            "risk_score": risk_score,
-            "risk_level": risk_level,
-            "risk_factors": risk_factors,
-        }
-
-    def _make_decision(self, claim_data, document_result, policy_result, fraud_result):
-        bill_amount = float(claim_data.get("bill_amount", 0))
-        policy_limit = float(claim_data.get("policy_limit", 0))
-
-        if document_result["status"] == "incomplete":
-            return {
-                "decision": "PENDING_DOCUMENTS",
-                "approved_amount": 0,
-                "requires_human_review": True,
-                "explanation": "Claim is pending because required documents are missing.",
-            }
-
-        if fraud_result["risk_level"] == "high":
-            return {
-                "decision": "UNDER_REVIEW",
-                "approved_amount": 0,
-                "requires_human_review": True,
-                "explanation": "Claim requires human review because fraud risk is high.",
-            }
-
-        if not policy_result["eligible"]:
-            return {
-                "decision": "REJECTED",
-                "approved_amount": 0,
-                "requires_human_review": False,
-                "explanation": "Claim rejected because policy eligibility rules are not satisfied.",
-                "reasons": policy_result["reasons"],
-            }
-
-        approved_amount = min(bill_amount, policy_limit)
-
-        return {
-            "decision": "APPROVED",
-            "approved_amount": approved_amount,
-            "requires_human_review": False,
-            "explanation": (
-                "Claim approved because all required documents are complete, "
-                "policy is eligible, and fraud risk is acceptable."
-            ),
+            "workflow_status": "completed",
+            "document_medical_analysis": document_result,
+            "policy_eligibility_analysis": policy_result,
+            "risk_fraud_analysis": fraud_result,
+            "final_decision": final_decision,
         }
 
 
 if __name__ == "__main__":
     sample_claim = {
         "patient_name": "Ram Sharma",
+        "hospital_name": "City Hospital",
         "diagnosis": "Appendicitis",
         "treatment": "Appendix Surgery",
+        "prescription": "Antibiotics and pain medicine",
+        "lab_test": "Blood test and ultrasound",
         "bill_amount": 80000,
         "policy_limit": 100000,
+        "deductible": 5000,
+        "copayment_percent": 10,
         "policy_active": True,
         "waiting_period_completed": True,
         "hospital_in_network": True,
         "duplicate_claim": False,
         "diagnosis_treatment_mismatch": False,
+        "previous_claims_count": 2,
+        "recent_claims_count": 1,
         "documents": [
             "Insurance Card",
             "Citizenship / ID",
@@ -222,4 +113,5 @@ if __name__ == "__main__":
     supervisor = SupervisorAgent()
     result = supervisor.process_claim(sample_claim)
 
+    print("Supervisor Agent Result:")
     print(result)

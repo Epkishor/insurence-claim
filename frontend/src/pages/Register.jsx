@@ -62,6 +62,12 @@ export default function Register() {
 
       <section className="register-shell">
         <div className="auth-card register-card">
+          <div className="auth-card-header register-card-header">
+            <p>Create account</p>
+            <h2>Register your account</h2>
+            <span>Fill in your details to access the insurance claim platform.</span>
+          </div>
+
           {error && (
             <div className="auth-error" role="alert">
               {error}

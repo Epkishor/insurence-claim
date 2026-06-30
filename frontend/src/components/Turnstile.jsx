@@ -7,6 +7,11 @@ const Turnstile = forwardRef(function Turnstile({ onVerify, action }, ref) {
   const widgetId = useRef(null);
 
   useEffect(() => {
+    if (!SITE_KEY) {
+      onVerify("local-development-token");
+      return;
+    }
+
     let interval;
     const tryRender = () => {
       if (window.turnstile && containerRef.current && widgetId.current === null) {
@@ -40,6 +45,14 @@ const Turnstile = forwardRef(function Turnstile({ onVerify, action }, ref) {
       }
     },
   }));
+
+  if (!SITE_KEY) {
+    return (
+      <div className="turnstile-fallback">
+        Verification is disabled for local development.
+      </div>
+    );
+  }
 
   return <div ref={containerRef} />;
 });

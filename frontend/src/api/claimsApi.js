@@ -29,3 +29,8 @@ export const processClaim = async (id) => {
   const response = await api.post(`/claims/claims/${id}/process/`);
   return response.data;
 };
+
+export const aiProcessClaim = async (id, aiOptions = {}) => {
+  const response = await api.post(`/claims/claims/${id}/ai-process/`, aiOptions);
+  return response.data;
+};
