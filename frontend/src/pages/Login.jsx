@@ -51,7 +51,7 @@ export default function Login() {
           </div>
         </div>
 
-        <a href="mailto:support@insuranceclaim.local" className="auth-support-link">
+        <a href="mailto:insurifyx.app@gmail.com" className="auth-support-link">
           Help / Support
         </a>
       </header>
