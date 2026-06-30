@@ -44,3 +44,13 @@ chroma.sqlite3
 # OCR / temporary extracted files
 *.tmp
 *.cache
+
+# Docker Data Volumes (CRITICAL)
+postgres_data/
+var-lib-postgresql-data/
+.docker_data/
+
+# IDE / Editor folders
+.vscode/
+.idea/
+.DS_Store
